@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>SVG to Bangle.js converter</title>
+  </head>
+  <body>
+    <h1>SVG to Bangle.js converter</h1>
+    <p>Converts SVG files into arrays of points that can be rendered on a Bangle.js</p>
+    <p>See the <a href="https://github.com/nebbishhacker/svg2bangle/blob/master/README.md">GitHub readme</a> for info on how to render the output.</p>
+
+    <h2>Input</h2>
+    <p>
+      <label for="file">Choose SVG file to convert
+        <input type="file" id="filePicker"/>
+      </label><br/>
+      <label for="originX">Use an X origin of
+        <input type="number" id="originX" value="0" step="any"/>
+        pixels
+      </label><br/>
+      <label for="originY">Use a Y origin of
+        <input type="number" id="originY" value="0" step="any"/>
+        pixels
+      </label><br/>
+      <label for="scale">Scale image by a factor of
+        <input type="number" id="scale" value="1" step="any"/>
+      </label><br/>
+      <label for="sampleCount">Sample each curve segment
+        <input type="number" id="sampleCount" value="1000" step="1"/>
+        times
+      </label><br/>
+      <label for="scale">Tolerate errors of up to
+        <input type="number" id="tolerance" value="0.5" step="any"/>
+        pixels
+      </label><br/>
+      <label for="numberFormat">Store numbers as</label>
+      <select id="numberFormat" value="int">
+        <option value="int">Integers</option>
+        <option value="float">Floats</option>
+      </select>
+    </p>
+    <p><button type="submit" onclick="convert();">Convert</button><p/>
+
+    <h2>Result</h2>
+    <p><span id="charCount">0</span> characters</p>
+    <textarea id="result" autocomplete="off"></textarea>
+    <div id="fileContents"></div>
+
+    <script src="simplify.js"></script>
+    <script src="path-data-polyfill.js"></script>
+    <script src="./svg2bangle.js"></script>
+
+    <script>
+      function convert(event) {
+        const picker = document.getElementById('filePicker');
+        if (picker.files.length != 1) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const div = document.getElementById('fileContents');
+            div.innerHTML = event.target.result;
+            const svg = div.getElementsByTagName("svg")[0];
+            options = {
+              tolerance:    Number(document.getElementById('tolerance').value),
+              scale:        Number(document.getElementById('scale').value),
+              sampleCount:  Number(document.getElementById('sampleCount').value),
+              originX:      Number(document.getElementById('originX').value),
+              originY:      Number(document.getElementById('originY').value),
+              numberFormat: document.getElementById('numberFormat').value
+            };
+            let result = svg2bangle(svg, options);
+            document.getElementById("result").value = result;
+            document.getElementById("charCount").innerText = result.length;
+        }
+        reader.readAsText(picker.files[0]);
+        setTimeout(() => {
+        }, 100);
+      };
+    </script>
+  </body>
+<html>

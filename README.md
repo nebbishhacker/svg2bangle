@@ -6,11 +6,11 @@ Supported:
  - All basic shapes (rect, circle, polyline, path, etc)
  - Fill colors
  - Stroke colors
+ - `<use>` elements
 
 Not supported:
  - Paths with holes
  - Stroke widths other than 1 pixel
- - `<use>` elements
  - Viewport clipping
  - Anything even remotely fancy
 

@@ -1,6 +1,42 @@
 (() => {
   'use strict';
 
+  function replaceUseElements(svg, element = svg) {
+    for (const use of Array.from(element.getElementsByTagName("use"))) {
+      const target = svg.querySelector(use.href.baseVal);
+      if (!target) continue;
+
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      Array.from(use.attributes)
+        .filter(a => !["x", "y", "width", "height", "href", "xlink:href"].includes(a.name))
+        .forEach(a => g.setAttribute(a.name, a.value));
+
+      const t = svg.createSVGTransform();
+      t.setTranslate(use.x.baseVal.value, use.y.baseVal.value);
+      g.transform.baseVal.appendItem(t);
+
+      let child;
+      if (target.tagName == "symbol" || target.tagName == "svg") {
+        child = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        Array.from(target.attributes).forEach(a => child.setAttribute(a.name, a.value));
+        child.innerHTML = target.innerHTML;
+        if (use.getAttribute("width")) child.setAttribute("width", use.getAttribute("width"));
+        if (use.getAttribute("height")) child.setAttribute("height", use.getAttribute("height"));
+        if (target.tagName == "symbol") {
+          if (!child.getAttribute("width")) child.setAttribute("width", "100%");
+          if (!child.getAttribute("height")) child.setAttribute("height", "100%");
+        }
+      }
+      else child = target.cloneNode(true);
+
+      g.appendChild(child);
+      use.replaceWith(g);
+
+      replaceUseElements(svg, g);
+    }
+  }
+
   function bezier(points, t) {
     const n = 1-t;
     return {
@@ -26,21 +62,31 @@
       .join("");
   }
 
-  function isHidden(node) {
-    if (!node || !node.style) return false;
-    if (node.style.display == "none") return true;
-    return isHidden(node.parentNode);
+  function isVisible(node) {
+    if (!node || !node.style) return true;
+    if (node.tagName == "symbol" || node.tagName == "defs" || node.style.display == "none") return false;
+    return isVisible(node.parentNode);
+  }
+
+  function getTransform(svg, node) {
+    let t = node.getCTM();
+    let p = node.parentNode;
+    while (p != svg) {
+      if (p.tagName == "svg") t = p.getCTM().multiply(t);
+      p = p.parentNode;
+    }
+    return t;
   }
 
   function svgShape2Polys(svg, svgShape, sampleCount, tolerance, maxPoints) {
-    if (isHidden(svgShape)) return [];
+    if (!isVisible(svgShape)) return [];
 
     const style = getComputedStyle(svgShape);
     let filled = style.fill && style.fill != "none";
     let stroked = style.stroke && style.stroke != "none";
     if (!filled && !stroked) return [];
 
-    const transform = svgShape.getCTM();
+    const transform = getTransform(svg, svgShape);
     const segments = svgShape.getPathData({normalize: true});
 
     let subpaths = [];
@@ -135,12 +181,15 @@
     const originX = options.originX || 0;
     const originY = options.originY || 0;
     const numberFormat = options.numberFormat || "int";
-    if (!svg.getAttribute("width") && !svg.getAttribute("height")) {
+    if ((!svg.getAttribute("width") || svg.getAttribute("width").includes("%")) &&
+      (!svg.getAttribute("height") || svg.getAttribute("height").includes("%"))) {
       svg.setAttribute("width", svg.viewBox.baseVal.width + "px");
       svg.setAttribute("height", svg.viewBox.baseVal.height + "px");
     }
     svg.width.baseVal.value *= scale;
     svg.height.baseVal.value *= scale;
+
+    replaceUseElements(svg);
 
     let polys = []
     for (const svgShape of svg.querySelectorAll('rect,circle,ellipse,line,polyline,polygon,path')) {

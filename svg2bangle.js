@@ -206,7 +206,11 @@
         let fields = [];
         if (poly.fill) fields.push(`fill: "${poly.fill}"`);
         if (poly.stroke) fields.push(`stroke: "${poly.stroke}"`);
-        fields.push(`points: ${numberFormat == "float" ? encodeAsFloatArray(points) : encodeAsIntArray(points)}`);
+        let encodedPoints;
+        if (numberFormat == "float") encodedPoints = encodeAsFloatArray(points);
+        else if (numberFormat == "int") encodedPoints = encodeAsIntArray(points);
+        else encodedPoints = JSON.stringify(points.map(n => Math.round(n * 1000) / 1000));
+        fields.push("points: " + encodedPoints);
         return `  {${fields.join(', ')}}`;
       }).join(",\n")
     }\n];`;

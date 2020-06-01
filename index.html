@@ -34,10 +34,11 @@
         <input type="number" id="tolerance" value="0.5" step="any"/>
         pixels
       </label><br/>
-      <label for="numberFormat">Store numbers as</label>
+      <label for="numberFormat">Store numbers in a</label>
       <select id="numberFormat" value="int">
-        <option value="int">Integers</option>
-        <option value="float">Floats</option>
+        <option value="number">Regular Array</option>
+        <option value="int">Int ArrayBuffer</option>
+        <option value="float">Float ArrayBuffer</option>
       </select>
     </p>
     <p><button type="submit" onclick="convert();">Convert</button><p/>
